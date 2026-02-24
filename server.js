@@ -38,7 +38,7 @@ connectDB();
 
 
 app.use(cors({
-  origin: ["http://localhost:5173","https://student-app-frontend-phi.vercel.app/"],
+  origin: ["http://localhost:5173","https://student-app-frontend-phi.vercel.app"],
   credentials: true
 }));
 
