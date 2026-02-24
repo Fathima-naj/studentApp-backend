@@ -28,3 +28,19 @@ export const deleteStudent = async (req, res) => {
   await Student.findByIdAndDelete(req.params.id);
   res.json({ message: "Student deleted" });
 };
+
+
+export const getOwnStudentData = async (req, res) => {
+  try {
+    console.log(req.user)
+    const student = await Student.findOne({ userId: req.user._id });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

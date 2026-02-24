@@ -30,6 +30,7 @@ import connectDB from "./config/db.js";
 import cors from "cors";
 import studentRouter from "./routes/studentRoutes.js";
 import userRouter from "./routes/authRoutes.js";
+import adminRouter from './routes/adminRoutes.js'
 
 dotenv.config();
 const app = express();
@@ -46,6 +47,7 @@ app.use(express.json());
 
 app.use('/api/user', userRouter);
 app.use('/api/student', studentRouter);
+app.use('/api/admin',adminRouter)
 
 const PORT = process.env.PORT || 5000;
 
