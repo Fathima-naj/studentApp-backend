@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getOwnStudentData,
+  updateOwnStudent,
 } from "../controller/studentController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -11,5 +12,6 @@ const router = express.Router();
 router.use(authMiddleware,roleMiddleware('user'));
 
 router.get("/getStudent", getOwnStudentData);
+router.get("/update/:id",updateOwnStudent);
 
 export default router;

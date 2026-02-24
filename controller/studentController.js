@@ -78,3 +78,30 @@ export const getOwnStudentData = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateOwnStudent = async (req, res) => {
+  try {
+    const { name, email, course, password } = req.body;
+
+    const student = await Student.findOne({ userId: req.user._id });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    if (name) student.name = name;
+    if (email) student.email = email;
+    if (course) student.course = course;
+
+    await student.save();
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await User.findByIdAndUpdate(student.userId, { password: hashedPassword });
+    }
+
+    res.status(200).json({ message: "Student updated successfully", student });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
