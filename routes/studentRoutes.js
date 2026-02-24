@@ -12,6 +12,6 @@ const router = express.Router();
 router.use(authMiddleware,roleMiddleware('user'));
 
 router.get("/getStudent", getOwnStudentData);
-router.get("/update/:id",updateOwnStudent);
+router.get("/update",updateOwnStudent);
 
 export default router;
