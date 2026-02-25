@@ -82,51 +82,60 @@ export const getOwnStudentData = async (req, res) => {
   }
 };
 
+import Student from "../models/Student.js";
+import User from "../models/User.js";
+import bcrypt from "bcrypt";
+
 export const updateOwnStudent = async (req, res) => {
   try {
-    const userId = req.user.id; // from verifyToken middleware
+    const userId = req.user.id;
 
     const { name, email, course, password } = req.body;
 
-    // 🔥 FIXED: use userId (not user)
+    // 🔍 Find existing student
     let student = await Student.findOne({ userId });
 
     if (!student) {
-      // CREATE if not exists
+      // 🔥 Create profile if not exists
       student = new Student({
-        userId,   // 🔥 FIXED HERE
+        userId,
         name,
         email,
         course,
-        password,
       });
 
       await student.save();
+    } else {
+      // 🔄 Update profile if exists
+      student.name = name || student.name;
+      student.email = email || student.email;
+      student.course = course || student.course;
 
-      return res.status(201).json({
-        message: "Student profile created",
-        student,
-      });
+      await student.save();
     }
 
-    // UPDATE if exists
-    student.name = name || student.name;
-    student.email = email || student.email;
-    student.course = course || student.course;
+    // 🔐 If password provided → update in User model
+    if (password && password.trim() !== "") {
+      const user = await User.findById(userId);
 
-    if (password) {
-      student.password = password;
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+
+      await user.save();
     }
-
-    await student.save();
 
     res.status(200).json({
-      message: "Student profile updated",
+      message: "Profile saved successfully",
       student,
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
-
