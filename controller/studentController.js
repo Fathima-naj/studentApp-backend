@@ -86,7 +86,7 @@ export const updateOwnStudent = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const { name, email, course, password } = req.body;
+    const { name, email, course, password } = req.body ||{};
 
     let student = await Student.findOne({ userId });
 
