@@ -66,14 +66,17 @@ export const deleteStudent = async (req, res) => {
 
 export const getOwnStudentData = async (req, res) => {
   try {
-    console.log(req.user)
+    console.log(req.user);
+
     const student = await Student.findOne({ userId: req.user._id });
 
+    // 🔥 If no student profile, return null instead of 404
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(200).json(null);
     }
 
-    res.json(student);
+    res.status(200).json(student);
+
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
