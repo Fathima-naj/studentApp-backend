@@ -70,7 +70,6 @@ export const getOwnStudentData = async (req, res) => {
 
     const student = await Student.findOne({ userId: req.user._id });
 
-    // 🔥 If no student profile, return null instead of 404
     if (!student) {
       return res.status(200).json(null);
     }
@@ -82,9 +81,6 @@ export const getOwnStudentData = async (req, res) => {
   }
 };
 
-import Student from "../models/Student.js";
-import User from "../models/User.js";
-import bcrypt from "bcrypt";
 
 export const updateOwnStudent = async (req, res) => {
   try {
@@ -92,11 +88,9 @@ export const updateOwnStudent = async (req, res) => {
 
     const { name, email, course, password } = req.body;
 
-    // 🔍 Find existing student
     let student = await Student.findOne({ userId });
 
     if (!student) {
-      // 🔥 Create profile if not exists
       student = new Student({
         userId,
         name,
@@ -106,7 +100,6 @@ export const updateOwnStudent = async (req, res) => {
 
       await student.save();
     } else {
-      // 🔄 Update profile if exists
       student.name = name || student.name;
       student.email = email || student.email;
       student.course = course || student.course;
@@ -114,7 +107,6 @@ export const updateOwnStudent = async (req, res) => {
       await student.save();
     }
 
-    // 🔐 If password provided → update in User model
     if (password && password.trim() !== "") {
       const user = await User.findById(userId);
 
