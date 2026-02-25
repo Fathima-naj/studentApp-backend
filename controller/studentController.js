@@ -84,6 +84,9 @@ export const getOwnStudentData = async (req, res) => {
 
 export const updateOwnStudent = async (req, res) => {
   try {
+    console.log("controller started")
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
     const userId = req.user.id;
 
     const { name, email, course, password } = req.body ||{};

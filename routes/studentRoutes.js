@@ -13,6 +13,10 @@ const router = express.Router();
 router.use(authMiddleware,roleMiddleware('user'));
 
 router.get("/getStudent", getOwnStudentData);
-router.put("/update",updateOwnStudent,upload.single("profileImage"));
+router.put(
+  "/update",
+  upload.single("profileImage"),
+  updateOwnStudent
+);          
 
 export default router;
