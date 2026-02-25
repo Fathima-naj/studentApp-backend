@@ -79,29 +79,51 @@ export const getOwnStudentData = async (req, res) => {
   }
 };
 
+
+
 export const updateOwnStudent = async (req, res) => {
   try {
+    const userId = req.user.id; // from verifyToken middleware
+
     const { name, email, course, password } = req.body;
 
-    const student = await Student.findOne({ userId: req.user._id });
+    let student = await Student.findOne({ user: userId });
+
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      // 🔥 CREATE if not exists
+      student = new Student({
+        user: userId,
+        name,
+        email,
+        course,
+        password,
+      });
+
+      await student.save();
+
+      return res.status(201).json({
+        message: "Student profile created",
+        student,
+      });
     }
 
-    if (name) student.name = name;
-    if (email) student.email = email;
-    if (course) student.course = course;
+    // 🔥 UPDATE if exists
+    student.name = name || student.name;
+    student.email = email || student.email;
+    student.course = course || student.course;
+
+    if (password) {
+      student.password = password;
+    }
 
     await student.save();
 
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await User.findByIdAndUpdate(student.userId, { password: hashedPassword });
-    }
+    res.status(200).json({
+      message: "Student profile updated",
+      student,
+    });
 
-    res.status(200).json({ message: "Student updated successfully", student });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message });
   }
 };
