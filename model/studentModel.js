@@ -9,6 +9,7 @@ const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email:{type:String,required:true},
   course: { type: String, required: true },
+  profileImage:{type:String}
 }, { timestamps: true });
 
 const Student= mongoose.model("Student", studentSchema);

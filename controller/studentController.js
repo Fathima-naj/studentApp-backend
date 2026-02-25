@@ -96,6 +96,7 @@ export const updateOwnStudent = async (req, res) => {
         name,
         email,
         course,
+        profileImage: req.file?.path || "",
       });
 
       await student.save();
@@ -103,7 +104,9 @@ export const updateOwnStudent = async (req, res) => {
       student.name = name || student.name;
       student.email = email || student.email;
       student.course = course || student.course;
-
+      if (req.file) {
+        student.profileImage = req.file.path;
+      }
       await student.save();
     }
 
