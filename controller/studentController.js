@@ -82,20 +82,19 @@ export const getOwnStudentData = async (req, res) => {
   }
 };
 
-
-
 export const updateOwnStudent = async (req, res) => {
   try {
     const userId = req.user.id; // from verifyToken middleware
 
     const { name, email, course, password } = req.body;
 
-    let student = await Student.findOne({ user: userId });
+    // 🔥 FIXED: use userId (not user)
+    let student = await Student.findOne({ userId });
 
     if (!student) {
-      // 🔥 CREATE if not exists
+      // CREATE if not exists
       student = new Student({
-        user: userId,
+        userId,   // 🔥 FIXED HERE
         name,
         email,
         course,
@@ -110,7 +109,7 @@ export const updateOwnStudent = async (req, res) => {
       });
     }
 
-    // 🔥 UPDATE if exists
+    // UPDATE if exists
     student.name = name || student.name;
     student.email = email || student.email;
     student.course = course || student.course;
@@ -130,3 +129,4 @@ export const updateOwnStudent = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
