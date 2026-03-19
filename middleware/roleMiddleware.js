@@ -1,17 +1,23 @@
-const roleMiddleware = (...allowedRoles) => {
-  return (req, res, next) => {
+import asyncHandler from "../utils/asyncHandler.js";
 
-    if (!req.user)
-      return res.status(401).json({ message: "Unauthorized" });
+const roleMiddleware = (...allowedRoles) => {
+  return asyncHandler(async (req, res, next) => {
+
+    if (!req.user) {
+      const error = new Error("Unauthorized");
+      error.statusCode = 401;
+      throw error;
+    }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        message: "Access denied. Insufficient permission"
-      });
+      const error = new Error("Access denied. Insufficient permission");
+      error.statusCode = 403;
+      throw error;
     }
 
     next();
-  };
+
+  });
 };
 
 export default roleMiddleware;

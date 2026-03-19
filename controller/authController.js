@@ -1,43 +1,52 @@
-
 import bcrypt from "bcryptjs";
 import User from "../model/userModel.js";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+import asyncHandler from "../utils/asyncHandler.js";
+import { sendResponse } from "../utils/apiResponse.js";
 
-    const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ message: "User already exists" });
+export const registerUser = asyncHandler(async (req, res, next) => {
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const { name, email, password } = req.body;
 
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword
-    });
+  const userExists = await User.findOne({ email });
 
-    res.status(201).json({ message: "User registered successfully",user });
-
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (userExists) {
+    const error = new Error("User already exists");
+    error.statusCode = 400;
+    throw error;
   }
-};
 
-export const loginUser = async (req, res) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword
+  });
+
+  sendResponse(res, 201, "User registered successfully", user);
+
+});
+
+export const loginUser = asyncHandler(async (req, res, next) => {
+
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    const error = new Error("User not found");
+    error.statusCode = 400;
+    throw error;
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    return res.status(400).json({ message: "Invalid credentials" });
+    const error = new Error("Invalid credentials");
+    error.statusCode = 400;
+    throw error;
   }
 
   const token = jwt.sign(
@@ -46,13 +55,14 @@ export const loginUser = async (req, res) => {
     { expiresIn: "1d" }
   );
 
-  res.json({
+  sendResponse(res, 200, "Login successful", {
     token,
     user: {
       _id: user._id,
       name: user.name,
       email: user.email,
-      role:user.role
+      role: user.role
     }
   });
-};
+
+});

@@ -2,138 +2,164 @@ import Student from "../model/studentModel.js";
 import User from "../model/userModel.js";
 import bcrypt from "bcryptjs";
 
-export const createStudent = async (req, res) => {
-  try {
-    const { name, email, course } = req.body;
+import asyncHandler from "../utils/asyncHandler.js";
+import { sendResponse } from "../utils/apiResponse.js";
 
-    let user = await User.findOne({ email });
+export const createStudent = asyncHandler(async (req, res) => {
 
-    if (!user) {
-      const hashedPassword = await bcrypt.hash("default123", 10);
+  const { name, email, course } = req.body;
 
-      user = await User.create({
-        name,
-        email,
-        password: hashedPassword,
-        role: "user"
-      });
-    }
+  let user = await User.findOne({ email });
 
-    const existingStudent = await Student.findOne({ userId: user._id });
-    if (existingStudent) {
-      return res.status(400).json({
-        message: "Student already exists"
-      });
-    }
-    const student = await Student.create({
+  if (!user) {
+    const hashedPassword = await bcrypt.hash("default123", 10);
+
+    user = await User.create({
       name,
       email,
-      course,
-      userId: user._id
+      password: hashedPassword,
+      role: "user"
     });
-
-    res.status(201).json(student);
-
-  } catch (error) {
-    res.status(500).json({ message: error.message});
   }
-};
 
-export const getStudents = async (req, res) => {
+  const existingStudent = await Student.findOne({ userId: user._id });
+
+  if (existingStudent) {
+    const error = new Error("Student already exists");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const student = await Student.create({
+    name,
+    email,
+    course,
+    userId: user._id
+  });
+
+  sendResponse(res, 201, "Student created successfully", student);
+
+});
+
+
+export const getStudents = asyncHandler(async (req, res) => {
+
   const students = await Student.find();
-  res.json(students);
-};
 
-export const getStudent = async (req, res) => {
+  sendResponse(res, 200, "Students fetched successfully", students);
+
+});
+
+
+export const getStudent = asyncHandler(async (req, res) => {
+
   const student = await Student.findById(req.params.id);
-  res.json(student);
-};
 
-export const updateStudent = async (req, res) => {
+  if (!student) {
+    const error = new Error("Student not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  sendResponse(res, 200, "Student fetched successfully", student);
+
+});
+
+
+export const updateStudent = asyncHandler(async (req, res) => {
+
   const student = await Student.findByIdAndUpdate(
     req.params.id,
     req.body,
     { new: true }
   );
-  res.json(student);
-};
 
-export const deleteStudent = async (req, res) => {
-  await Student.findByIdAndDelete(req.params.id);
-  res.json({ message: "Student deleted" });
-};
-
-
-export const getOwnStudentData = async (req, res) => {
-  try {
-    console.log(req.user);
-
-    const student = await Student.findOne({ userId: req.user._id });
-
-    if (!student) {
-      return res.status(200).json(null);
-    }
-
-    res.status(200).json(student);
-
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+  if (!student) {
+    const error = new Error("Student not found");
+    error.statusCode = 404;
+    throw error;
   }
-};
+
+  sendResponse(res, 200, "Student updated successfully", student);
+
+});
 
 
-export const updateOwnStudent = async (req, res) => {
-  try {
-    console.log("controller started")
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
-    const userId = req.user.id;
+export const deleteStudent = asyncHandler(async (req, res) => {
 
-    const { name, email, course, password } = req.body ||{};
+  const student = await Student.findByIdAndDelete(req.params.id);
 
-    let student = await Student.findOne({ userId });
+  if (!student) {
+    const error = new Error("Student not found");
+    error.statusCode = 404;
+    throw error;
+  }
 
-    if (!student) {
-      student = new Student({
-        userId,
-        name,
-        email,
-        course,
-        profileImage: req.file?.path || "",
-      });
+  sendResponse(res, 200, "Student deleted successfully");
 
-      await student.save();
-    } else {
-      student.name = name || student.name;
-      student.email = email || student.email;
-      student.course = course || student.course;
-      if (req.file) {
-        student.profileImage = req.file.path;
-      }
-      await student.save();
-    }
+});
 
-    if (password && password.trim() !== "") {
-      const user = await User.findById(userId);
 
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+export const getOwnStudentData = asyncHandler(async (req, res) => {
 
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+  const student = await Student.findOne({ userId: req.user._id });
 
-      await user.save();
-    }
+  if (!student) {
+    return sendResponse(res, 200, "No student data found", null);
+  }
 
-    res.status(200).json({
-      message: "Profile saved successfully",
-      student,
+  sendResponse(res, 200, "Student data fetched", student);
+
+});
+
+
+export const updateOwnStudent = asyncHandler(async (req, res) => {
+
+  const userId = req.user.id;
+
+  const { name, email, course, password } = req.body || {};
+
+  let student = await Student.findOne({ userId });
+
+  if (!student) {
+    student = new Student({
+      userId,
+      name,
+      email,
+      course,
+      profileImage: req.file?.path || "",
     });
 
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    await student.save();
+
+  } else {
+    student.name = name || student.name;
+    student.email = email || student.email;
+    student.course = course || student.course;
+
+    if (req.file) {
+      student.profileImage = req.file.path;
+    }
+
+    await student.save();
   }
-};
+
+  if (password && password.trim() !== "") {
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    await user.save();
+  }
+
+  sendResponse(res, 200, "Profile updated successfully", student);
+
+});

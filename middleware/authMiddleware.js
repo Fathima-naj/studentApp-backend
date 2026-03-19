@@ -1,28 +1,32 @@
 import jwt from "jsonwebtoken";
 import User from "../model/userModel.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = asyncHandler(async (req, res, next) => {
+
   const authHeader = req.headers.authorization;
 
-  if (!authHeader)
-    return res.status(401).json({ message: "No token provided" });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const error = new Error("No token provided");
+    error.statusCode = 401;
+    throw error;
+  }
 
   const token = authHeader.split(" ")[1];
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select("-password");
+  const user = await User.findById(decoded.id).select("-password");
 
-    if (!user)
-      return res.status(401).json({ message: "User not found" });
-
-    req.user = user; 
-    next();
-
-  } catch (error) {
-    res.status(401).json({ message: "Token not valid" });
+  if (!user) {
+    const error = new Error("User not found");
+    error.statusCode = 401;
+    throw error;
   }
-};
+
+  req.user = user;
+  next();
+
+});
 
 export default authMiddleware;
